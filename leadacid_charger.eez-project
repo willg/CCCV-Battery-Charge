@@ -1,0 +1,448 @@
+{
+  "settings": {
+    "general": {
+      "projectVersion": "v2",
+      "masterProject": "modular-psu-firmware.eez-project",
+      "imports": []
+    },
+    "build": {
+      "configurations": [
+        {
+          "name": "Default"
+        }
+      ],
+      "files": []
+    }
+  },
+  "data": [
+    {
+      "name": "charge_current",
+      "type": "float",
+      "defaultValue": "0"
+    },
+    {
+      "name": "cell_count",
+      "type": "integer",
+      "defaultValue": "6"
+    },
+    {
+      "name": "termination_voltage",
+      "type": "float",
+      "defaultValue": "cell_count * cell_charge_voltage"
+    },
+    {
+      "name": "cell_charge_voltage",
+      "type": "float",
+      "defaultValue": "2.3"
+    },
+    {
+      "name": "Vmon",
+      "type": "float",
+      "defaultValue": "0 V"
+    },
+    {
+      "name": "Imon",
+      "type": "float",
+      "defaultValue": "0 mA"
+    },
+    {
+      "name": "charge_state",
+      "type": "enum",
+      "enumItems": "[\n    \"Stopped\",\n    \"Charging\"\n]"
+    },
+    {
+      "name": "datalog_filename",
+      "type": "string"
+    },
+    {
+      "name": "amp_hour"
+    }
+  ],
+  "actions": [
+    {
+      "name": "input_charge_current"
+    },
+    {
+      "name": "close"
+    },
+    {
+      "name": "start"
+    },
+    {
+      "name": "input_cell_count"
+    },
+    {
+      "name": "input_cell_voltage"
+    },
+    {
+      "name": "stop"
+    },
+    {
+      "name": "input_filename"
+    }
+  ],
+  "gui": {
+    "pages": [
+      {
+        "name": "Main",
+        "widgets": [
+          {
+            "type": "Container",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "left": 0,
+            "top": 240,
+            "width": 480,
+            "height": 32,
+            "name": "bottom bar",
+            "widgets": [
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "status_icon_enabled"
+                },
+                "action": "close",
+                "left": 0,
+                "top": 0,
+                "width": 41,
+                "height": 32,
+                "text": "E"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "status_title"
+                },
+                "left": 41,
+                "top": 0,
+                "width": 439,
+                "height": 32,
+                "text": "Lead Acid Battery Charge"
+              }
+            ]
+          },
+          {
+            "type": "Container",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "left": 0,
+            "top": 0,
+            "width": 480,
+            "height": 190,
+            "name": "config",
+            "widgets": [
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 0,
+                "width": 112,
+                "height": 32,
+                "text": "Cell Count:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 88,
+                "width": 156,
+                "height": 40,
+                "resizing": {
+                  "pinToEdge": 0,
+                  "fixSize": 1
+                },
+                "text": "Charge Current:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "edit_value_active_M_center"
+                },
+                "data": "charge_current",
+                "action": "input_charge_current",
+                "left": 156,
+                "top": 88,
+                "width": 80,
+                "height": 40,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "edit_value_active_S_center"
+                },
+                "data": "cell_count",
+                "action": "input_cell_count",
+                "left": 104,
+                "top": 0,
+                "width": 60,
+                "height": 40,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 179,
+                "top": 0,
+                "width": 202,
+                "height": 32,
+                "text": "Cell Charge Voltage:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "edit_value_active_S_center"
+                },
+                "data": "cell_charge_voltage",
+                "action": "input_cell_voltage",
+                "left": 381,
+                "top": 0,
+                "width": 80,
+                "height": 40,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 48,
+                "width": 275,
+                "height": 32,
+                "text": "Charge Termination Voltage:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "status_bgnd"
+                },
+                "data": "termination_voltage",
+                "left": 275,
+                "top": 40,
+                "width": 80,
+                "height": 40,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 141,
+                "width": 171,
+                "height": 32,
+                "text": "Datalog Filename:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "edit_value_active_S_left"
+                },
+                "data": "datalog_filename",
+                "action": "input_filename",
+                "left": 187,
+                "top": 141,
+                "width": 274,
+                "height": 32,
+                "text": ""
+              }
+            ]
+          },
+          {
+            "type": "Container",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "left": 0,
+            "top": 190,
+            "width": 480,
+            "height": 50,
+            "name": "status",
+            "widgets": [
+              {
+                "type": "Select",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "data": "charge_state",
+                "left": 0,
+                "top": 0,
+                "width": 120,
+                "height": 40,
+                "widgets": [
+                  {
+                    "type": "LayoutView",
+                    "style": {
+                      "inheritFrom": "default"
+                    },
+                    "left": 0,
+                    "top": 0,
+                    "width": 120,
+                    "height": 40,
+                    "layout": "Running"
+                  },
+                  {
+                    "type": "LayoutView",
+                    "style": {
+                      "inheritFrom": "default"
+                    },
+                    "left": 0,
+                    "top": 0,
+                    "width": 120,
+                    "height": 40,
+                    "layout": "Start"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "closePageIfTouchedOutside": false,
+        "left": 0,
+        "top": 0,
+        "width": 480,
+        "height": 272
+      },
+      {
+        "name": "Start",
+        "widgets": [
+          {
+            "type": "Container",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "left": 0,
+            "top": 0,
+            "width": 480,
+            "height": 50,
+            "widgets": [
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "button_M"
+                },
+                "data": "charge_state",
+                "action": "start",
+                "left": 0,
+                "top": 0,
+                "width": 120,
+                "height": 40,
+                "text": "Start"
+              }
+            ]
+          }
+        ],
+        "left": 0,
+        "top": 0,
+        "width": 120,
+        "height": 40
+      },
+      {
+        "name": "Running",
+        "widgets": [
+          {
+            "type": "Container",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "left": 0,
+            "top": 0,
+            "width": 480,
+            "height": 50,
+            "widgets": []
+          },
+          {
+            "type": "Text",
+            "style": {
+              "inheritFrom": "button_M"
+            },
+            "data": "charge_state",
+            "action": "stop",
+            "left": 0,
+            "top": 0,
+            "width": 100,
+            "height": 40,
+            "text": "Stop"
+          },
+          {
+            "type": "DisplayData",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "data": "Vmon",
+            "left": 189,
+            "top": 8,
+            "width": 80,
+            "height": 32,
+            "displayOption": 0
+          },
+          {
+            "type": "DisplayData",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "data": "Imon",
+            "left": 269,
+            "top": 8,
+            "width": 80,
+            "height": 32,
+            "displayOption": 0
+          },
+          {
+            "type": "Text",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "data": "amp_hour",
+            "left": 349,
+            "top": 8,
+            "width": 80,
+            "height": 32,
+            "text": ""
+          },
+          {
+            "type": "Text",
+            "style": {
+              "inheritFrom": "default_M_left"
+            },
+            "left": 100,
+            "top": 8,
+            "width": 89,
+            "height": 32,
+            "text": "Battery:"
+          },
+          {
+            "type": "Text",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "left": 430,
+            "top": 8,
+            "width": 50,
+            "height": 32,
+            "text": "Ahr"
+          }
+        ],
+        "left": 0,
+        "top": 0,
+        "width": 120,
+        "height": 40
+      }
+    ],
+    "styles": [],
+    "fonts": [],
+    "bitmaps": [],
+    "colors": [],
+    "themes": []
+  }
+}
