@@ -1,0 +1,6 @@
+*
+!*/
+!*.py
+!*.res
+!*.eez-project
+!.gitignore
