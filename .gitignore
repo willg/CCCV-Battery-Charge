@@ -4,3 +4,4 @@
 !*.res
 !*.eez-project
 !.gitignore
+!*.md
