@@ -82,6 +82,7 @@ def charge():
         total_amp_seconds = 0
         total_amp_hour = 0
 
+        scpi('DISP:DIAL:DATA "disp_state", INT, 2')
         scpi('DISP:DIAL:DATA "Vmeas", FLOAT, VOLT, ' + str(uMon))
         scpi('DISP:DIAL:DATA "Imeas", FLOAT, AMPER, ' + str(iMon))
         scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, ' + str(total_amp_hour))
@@ -189,11 +190,8 @@ def main():
                 datalog_filename = input_text(2, 30, datalog_filename)
             elif action == "view_calculator":
                 calculator_loop()
-                display_setup_pane()
             elif action == "start":
-                scpi('DISP:DIAL:DATA "disp_state", INT, 2')
                 charge()
-                display_setup_pane()
             elif action == "close" or action == 0:
                 break
         
