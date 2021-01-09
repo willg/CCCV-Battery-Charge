@@ -32,17 +32,6 @@ def input_cell_count():
         scpi('DISP:DIALog:DATA "cell_count",INT,' + str(cell_count))
         scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
 
-def input_cell_voltage():
-    global cell_count
-    global cell_charge_voltage
-    global charge_voltage
-    value = scpi('DISP:INPut? "",NUMBER,VOLT, 0.0, 5.0, 2.3')
-    if value != None:
-        cell_charge_voltage = float(value)
-        charge_voltage = cell_count * cell_charge_voltage
-        scpi('DISP:DIALog:DATA "cell_charge_voltage",FLOAT,VOLT,' + str(cell_charge_voltage))
-        scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
-
 def input_charge_current():
     global charge_current
     value = scpi('DISP:INPut? "",NUMBER,AMPER, 0.0, 5.0, 1.0')
@@ -150,6 +139,8 @@ def display_calculator_pane():
     scpi('DISP:DIALog:DATA "c_rate_term",FLOAT,UNKN,' + str(c_rate_term))
 
 def calculator_loop():
+    global cell_charge_voltage
+    global charge_voltage
     global battery_capacity
     global termination_current 
     global c_rate_charge
@@ -163,7 +154,8 @@ def calculator_loop():
         if action == "input_cell_count":
             input_cell_count()
         elif action == "input_cell_voltage":
-            input_cell_voltage()
+            cell_charge_voltage = input_float("VOLT", 0, 10, cell_charge_voltage)
+            charge_voltage = cell_count * cell_charge_voltage
         elif action == "input_battery_capacity":
             battery_capacity = input_float("AMPER", 0, 50, battery_capacity)
             charge_current = battery_capacity * c_rate_charge
