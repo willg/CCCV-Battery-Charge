@@ -26,13 +26,6 @@ def input_int(minimum, maximum, default):
     if value != None:
         return int(value)
 
-def input_charge_current():
-    global charge_current
-    value = scpi('DISP:INPut? "",NUMBER,AMPER, 0.0, 5.0, 1.0')
-    if value != None:
-        charge_current = float(value)
-        scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
-
 def input_filename():
     global datalog_filename
     value = scpi('DISP:INPut? "", TEXT, 2, 20, "chargeLog"')
@@ -119,6 +112,7 @@ def display_setup_pane():
     scpi('DISP:DIAL:DATA "disp_state", INT, 0')
     scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
     scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
+    scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
     scpi('DISP:DIAL:DATA "datalog_filename",STR,' + str(datalog_filename))
 
 def display_calculator_pane():
@@ -170,21 +164,24 @@ def calculator_loop():
 
 
 def main():
-    global cell_count
-    global cell_charge_voltage
     global charge_voltage
     global charge_current
+    global termination_current
     global datalog_filename
 
     scpi("DISP:DIAL:OPEN \"/Scripts/leadacid_charger.res\"")
 
-    display_setup_pane()
 
     try:
         while True:
+            display_setup_pane()
             action = scpi("DISP:DIALog:ACTIon?")
             if action == "input_charge_current":
-                input_charge_current()
+                charge_current = input_float("AMPER", 0, 5, charge_current)
+            elif action == "input_charge_voltage":
+                charge_voltage = input_float("VOLT", 0, 40, charge_voltage)
+            elif action == "input_termination_current":
+                termination_current = input_float("AMPER", 0, 5, charge_current)
             elif action == "input_filename":
                 input_filename()
             elif action == "view_calculator":
