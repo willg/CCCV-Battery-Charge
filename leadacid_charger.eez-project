@@ -18,41 +18,43 @@
     {
       "name": "charge_current",
       "type": "float",
-      "defaultValue": "0"
+      "defaultValue": "0.00 mA"
     },
     {
       "name": "charge_voltage",
       "type": "float",
-      "defaultValue": "0"
+      "defaultValue": "0.00 V"
     },
     {
       "name": "termination_current",
       "type": "float",
-      "defaultValue": "0"
+      "defaultValue": "0.00 mA"
     },
     {
       "name": "Vmeas",
       "type": "float",
-      "defaultValue": "0 V"
+      "defaultValue": "0.00 V"
     },
     {
       "name": "Imeas",
       "type": "float",
-      "defaultValue": "0 mA"
+      "defaultValue": "0.00 mA"
     },
     {
       "name": "disp_state",
       "type": "enum",
-      "enumItems": "[\n    \"setup\",\n    \"calc\",\n    \"charging\"\n]",
+      "enumItems": "[\n    \"setup\",\n    \"calc\",\n    \"charging\",\n    \"done\"\n]",
       "defaultValue": "0"
     },
     {
       "name": "datalog_filename",
-      "type": "string"
+      "type": "string",
+      "defaultValue": "filename"
     },
     {
       "name": "elapsed_amp_hour",
-      "defaultValue": "0"
+      "type": "float",
+      "defaultValue": "000 A"
     },
     {
       "name": "calc_chemistry",
@@ -63,26 +65,32 @@
     {
       "name": "cell_count",
       "type": "integer",
-      "defaultValue": "1"
+      "defaultValue": "00"
     },
     {
       "name": "cell_charge_voltage",
       "type": "float",
-      "defaultValue": "0"
+      "defaultValue": "0.00 V"
     },
     {
       "name": "c_rate_charge",
       "type": "float",
-      "defaultValue": "0"
+      "defaultValue": "0.00"
     },
     {
       "name": "c_rate_term",
       "type": "float",
-      "defaultValue": "0"
+      "defaultValue": "0.00"
     },
     {
       "name": "battery_capacity",
-      "type": "float"
+      "type": "float",
+      "defaultValue": "000"
+    },
+    {
+      "name": "total_seconds",
+      "type": "float",
+      "defaultValue": "0000 s"
     }
   ],
   "actions": [
@@ -227,6 +235,17 @@
                     "width": 64,
                     "height": 32,
                     "layout": "charging"
+                  },
+                  {
+                    "type": "LayoutView",
+                    "style": {
+                      "inheritFrom": "default"
+                    },
+                    "left": 0,
+                    "top": 0,
+                    "width": 64,
+                    "height": 32,
+                    "layout": "done"
                   }
                 ]
               }
@@ -266,6 +285,17 @@
                 "width": 120,
                 "height": 40,
                 "text": "Done"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "left": 0,
+                "top": 0,
+                "width": 0,
+                "height": 0,
+                "text": ""
               },
               {
                 "type": "Text",
@@ -325,6 +355,18 @@
                 "width": 100,
                 "height": 40,
                 "text": "Stop"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "button_M"
+                },
+                "action": "start",
+                "left": 0,
+                "top": 0,
+                "width": 100,
+                "height": 40,
+                "text": "Restart"
               }
             ]
           }
@@ -349,62 +391,231 @@
             "height": 240,
             "widgets": [
               {
-                "type": "DisplayData",
+                "type": "Container",
                 "style": {
                   "inheritFrom": "default"
                 },
-                "data": "Vmeas",
-                "left": 138,
-                "top": 104,
-                "width": 80,
-                "height": 32,
-                "displayOption": 0
+                "left": 0,
+                "top": 75,
+                "width": 480,
+                "height": 140,
+                "name": "charge status",
+                "widgets": [
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default"
+                    },
+                    "left": 0,
+                    "top": -18,
+                    "width": 200,
+                    "height": 40,
+                    "text": "Charge Status:"
+                  },
+                  {
+                    "type": "DisplayData",
+                    "style": {
+                      "inheritFrom": "status_bgnd"
+                    },
+                    "data": "Vmeas",
+                    "left": 159,
+                    "top": 22,
+                    "width": 80,
+                    "height": 32,
+                    "displayOption": 0
+                  },
+                  {
+                    "type": "DisplayData",
+                    "style": {
+                      "inheritFrom": "status_bgnd"
+                    },
+                    "data": "Imeas",
+                    "left": 159,
+                    "top": 64,
+                    "width": 80,
+                    "height": 32,
+                    "displayOption": 0
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "status_bgnd"
+                    },
+                    "data": "total_seconds",
+                    "left": 383,
+                    "top": 64,
+                    "width": 80,
+                    "height": 32,
+                    "text": ""
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "left": 245,
+                    "top": 22,
+                    "width": 138,
+                    "height": 32,
+                    "text": "Charge (AHr):"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "status_bgnd"
+                    },
+                    "data": "elapsed_amp_hour",
+                    "left": 383,
+                    "top": 22,
+                    "width": 80,
+                    "height": 32,
+                    "text": ""
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "left": 245,
+                    "top": 64,
+                    "width": 138,
+                    "height": 32,
+                    "text": "Elapsed time:"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "left": 0,
+                    "top": 24,
+                    "width": 157,
+                    "height": 32,
+                    "text": "Battery Voltage:"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "left": 0,
+                    "top": 64,
+                    "width": 157,
+                    "height": 32,
+                    "text": "Charge Current:"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "button_M"
+                    },
+                    "left": 360,
+                    "top": 125,
+                    "width": 120,
+                    "height": 40,
+                    "text": "View Data"
+                  }
+                ]
               },
               {
-                "type": "DisplayData",
+                "type": "Container",
                 "style": {
                   "inheritFrom": "default"
                 },
-                "data": "Imeas",
-                "left": 218,
-                "top": 104,
-                "width": 80,
-                "height": 32,
-                "displayOption": 0
-              },
-              {
-                "type": "Text",
-                "style": {
-                  "inheritFrom": "default"
-                },
-                "data": "elapsed_amp_hour",
-                "left": 298,
-                "top": 104,
-                "width": 80,
-                "height": 32,
-                "text": ""
-              },
-              {
-                "type": "Text",
-                "style": {
-                  "inheritFrom": "default_M_left"
-                },
-                "left": 49,
-                "top": 104,
-                "width": 89,
-                "height": 32,
-                "text": "Battery:"
-              },
-              {
-                "type": "Text",
-                "style": {
-                  "inheritFrom": "default"
-                },
-                "left": 379,
-                "top": 104,
-                "width": 50,
-                "height": 32,
-                "text": "hr"
+                "left": 0,
+                "top": 0,
+                "width": 480,
+                "height": 59,
+                "name": "charge param",
+                "widgets": [
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "left": 0,
+                    "top": 0,
+                    "width": 262,
+                    "height": 32,
+                    "text": "Charge Parameters:"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_S_left"
+                    },
+                    "left": 93,
+                    "top": 32,
+                    "width": 37,
+                    "height": 24,
+                    "resizing": {
+                      "pinToEdge": 0,
+                      "fixSize": 1
+                    },
+                    "text": "CC:"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_S_left"
+                    },
+                    "data": "charge_current",
+                    "action": "",
+                    "left": 130,
+                    "top": 32,
+                    "width": 65,
+                    "height": 24,
+                    "text": ""
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_S_left"
+                    },
+                    "left": 0,
+                    "top": 32,
+                    "width": 32,
+                    "height": 24,
+                    "text": "CV:"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_S_left"
+                    },
+                    "data": "charge_voltage",
+                    "action": "",
+                    "left": 32,
+                    "top": 32,
+                    "width": 60,
+                    "height": 24,
+                    "text": ""
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_S_left"
+                    },
+                    "left": 207,
+                    "top": 32,
+                    "width": 108,
+                    "height": 24,
+                    "text": "Term Current:"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_S_left"
+                    },
+                    "data": "termination_current",
+                    "action": "",
+                    "left": 315,
+                    "top": 32,
+                    "width": 82,
+                    "height": 24,
+                    "text": ""
+                  }
+                ]
               }
             ]
           }
@@ -770,7 +981,7 @@
                 "action": "input_termination_current",
                 "left": 198,
                 "top": 80,
-                "width": 64,
+                "width": 87,
                 "height": 32,
                 "text": ""
               },
@@ -806,6 +1017,199 @@
         "top": 0,
         "width": 480,
         "height": 190
+      },
+      {
+        "name": "done",
+        "widgets": [
+          {
+            "type": "Container",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "left": 0,
+            "top": 0,
+            "width": 480,
+            "height": 240,
+            "widgets": [
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "left": 89,
+                "top": 0,
+                "width": 295,
+                "height": 50,
+                "text": "Charge Completed"
+              },
+              {
+                "type": "Container",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "left": 0,
+                "top": 58,
+                "width": 480,
+                "height": 169,
+                "name": "charge status",
+                "widgets": [
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "left": 0,
+                    "top": 72,
+                    "width": 150,
+                    "height": 32,
+                    "resizing": {
+                      "pinToEdge": 0,
+                      "fixSize": 1
+                    },
+                    "text": "Charge Current:"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "data": "charge_current",
+                    "action": "",
+                    "left": 168,
+                    "top": 72,
+                    "width": 92,
+                    "height": 32,
+                    "text": ""
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "left": 0,
+                    "top": 40,
+                    "width": 168,
+                    "height": 32,
+                    "text": "Charge Voltage:"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "data": "charge_voltage",
+                    "action": "",
+                    "left": 168,
+                    "top": 40,
+                    "width": 72,
+                    "height": 32,
+                    "text": ""
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default"
+                    },
+                    "left": 0,
+                    "top": 0,
+                    "width": 200,
+                    "height": 40,
+                    "text": "Charge Details:"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "data": "total_seconds",
+                    "left": 381,
+                    "top": 104,
+                    "width": 89,
+                    "height": 32,
+                    "text": ""
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "left": 0,
+                    "top": 104,
+                    "width": 138,
+                    "height": 32,
+                    "text": "Charge (AHr):"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "data": "elapsed_amp_hour",
+                    "left": 138,
+                    "top": 104,
+                    "width": 102,
+                    "height": 32,
+                    "text": ""
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "default_M_left"
+                    },
+                    "left": 245,
+                    "top": 104,
+                    "width": 127,
+                    "height": 32,
+                    "text": "Charge time:"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "button_M"
+                    },
+                    "left": 360,
+                    "top": 142,
+                    "width": 120,
+                    "height": 40,
+                    "text": "View Data"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Text",
+            "style": {
+              "inheritFrom": "default_M_left"
+            },
+            "left": 256,
+            "top": 99,
+            "width": 132,
+            "height": 32,
+            "resizing": {
+              "pinToEdge": 0,
+              "fixSize": 1
+            },
+            "text": "Term Current:"
+          },
+          {
+            "type": "Text",
+            "style": {
+              "inheritFrom": "default_M_left"
+            },
+            "data": "termination_current",
+            "action": "",
+            "left": 388,
+            "top": 99,
+            "width": 92,
+            "height": 32,
+            "text": ""
+          }
+        ],
+        "left": 0,
+        "top": 0,
+        "width": 120,
+        "height": 40
       }
     ],
     "styles": [],

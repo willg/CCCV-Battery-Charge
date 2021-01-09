@@ -13,6 +13,8 @@ c_rate_charge = 0.33
 c_rate_term = 0.05
 charge_current = battery_capacity * c_rate_charge
 termination_current = battery_capacity * c_rate_term
+total_amp_hour = 0
+total_seconds = 0
 
 channel = 1
 
@@ -71,7 +73,20 @@ def startDatalogging():
     filename = '/Recordings/' + datalog_filename + '.dlog'
     scpi('INIT:DLOG:TRACE "' + filename + '"')
 
+def display_charge_pane():
+    scpi('DISP:DIAL:DATA "disp_state", INT, 2')
+    scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
+    scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
+    scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
+    scpi('DISP:DIAL:DATA "Vmeas", FLOAT, VOLT, 0')
+    scpi('DISP:DIAL:DATA "Imeas", FLOAT, AMPER, 0')
+    scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, 0')
+    scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, 0')
+
 def charge():
+    global total_amp_hour, total_seconds
+    display_charge_pane()
+
     try:
         set_charge_param()
         startDatalogging()
@@ -81,11 +96,8 @@ def charge():
 
         total_amp_seconds = 0
         total_amp_hour = 0
-
-        scpi('DISP:DIAL:DATA "disp_state", INT, 2')
-        scpi('DISP:DIAL:DATA "Vmeas", FLOAT, VOLT, ' + str(uMon))
-        scpi('DISP:DIAL:DATA "Imeas", FLOAT, AMPER, ' + str(iMon))
-        scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, ' + str(total_amp_hour))
+        total_seconds = 0
+        time_step = 1 #seconds
 
         action = ''
 
@@ -96,18 +108,22 @@ def charge():
             uMon = getU(channel)
             iMon = getI(channel)
 
-            amp_seconds = iMon * 1 # 1 second time step
+            amp_seconds = iMon * time_step
             total_amp_seconds += amp_seconds
             total_amp_hour = total_amp_seconds/3600
 
             dlogTraceData(uMon, iMon, total_amp_hour)
-            #dlogTraceData(uMon, iMon)
 
             scpi('DISP:DIAL:DATA "Vmeas", FLOAT, VOLT, ' + str(uMon))
             scpi('DISP:DIAL:DATA "Imeas", FLOAT, AMPER, ' + str(iMon))
             scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, ' + str(total_amp_hour))
+            scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, ' + str(total_seconds))
 
-            action = scpi('DISP:DIALog:ACTIon? 1000ms')
+            if iMon < termination_current:
+                break
+
+            action = scpi('DISP:DIALog:ACTIon? ' + str(time_step))
+            total_seconds += time_step
 
     finally:
         scpi('OUTP 0')
@@ -167,6 +183,24 @@ def calculator_loop():
             # TODO this wont actually exit...
             break
 
+def display_done_pane():
+    scpi('DISP:DIAL:DATA "disp_state", INT, 3')
+    scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
+    scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
+    scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, ' + str(total_amp_hour))
+    scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
+    scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, ' + str(total_seconds))
+
+def done_loop():
+    while True:
+        display_done_pane()
+
+        action = scpi('DISP:DIALog:ACTIon?')
+        if action == "start":
+            break
+        elif action == 'close' or action == 0:
+            # TODO this wont actually exit...
+            break
 
 def main():
     global charge_voltage
@@ -192,6 +226,7 @@ def main():
                 calculator_loop()
             elif action == 'start':
                 charge()
+                done_loop()
             elif action == 'close' or action == 0:
                 break
         
