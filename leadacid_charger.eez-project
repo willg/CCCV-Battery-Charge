@@ -138,6 +138,9 @@
     },
     {
       "name": "input_battery_capacity"
+    },
+    {
+      "name": "view_datalog"
     }
   ],
   "gui": {
@@ -509,6 +512,7 @@
                     "style": {
                       "inheritFrom": "button_M"
                     },
+                    "action": "view_datalog",
                     "left": 360,
                     "top": 125,
                     "width": 120,
@@ -1167,6 +1171,7 @@
                     "style": {
                       "inheritFrom": "button_M"
                     },
+                    "action": "view_datalog",
                     "left": 360,
                     "top": 142,
                     "width": 120,

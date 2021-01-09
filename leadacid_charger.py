@@ -104,6 +104,11 @@ def charge():
         while True:
             if action == 'stop':
                break
+            elif action == 'view_datalog':
+                scpi('DISP:WINDOW:DLOG')
+            elif action == 'close' or action == 0:
+                # TODO this won't actually exit...
+                break;
 
             uMon = getU(channel)
             iMon = getI(channel)
@@ -196,8 +201,10 @@ def done_loop():
         display_done_pane()
 
         action = scpi('DISP:DIALog:ACTIon?')
-        if action == "start":
+        if action == 'start':
             break
+        elif action == 'view_datalog':
+            scpi('DISP:WINDOW:DLOG')
         elif action == 'close' or action == 0:
             # TODO this wont actually exit...
             break
