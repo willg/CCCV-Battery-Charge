@@ -12,10 +12,9 @@ Done
 * additional view while charging for viewing battery status
 * additional view to display stats at end of charge
 * button to view datalog
-
+* rename script to something like "CC-CV Battery Charge"
 
 TODO
 * default filename based on date/time?
-* rename script to something like "CC-CV Battery Charge"
 * clean-up python globals, these were copied from other scripts but look
   unnecessary?

@@ -1,4 +1,4 @@
-# 12V Lead Acid Battery Charger
+# CC-CV battery charge profile with li-ion and lead acid presets
 
 from eez import scpi, getI, getU, dlogTraceData
 from utime import sleep
@@ -215,7 +215,7 @@ def main():
     global termination_current
     global datalog_filename
 
-    scpi('DISP:DIAL:OPEN "/Scripts/leadacid_charger.res"')
+    scpi('DISP:DIAL:OPEN "/Scripts/CC-CV Battery Charge.res"')
 
     try:
         while True:
