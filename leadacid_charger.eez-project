@@ -743,6 +743,7 @@
                   "inheritFrom": "edit_value_active_M_center"
                 },
                 "data": "charge_voltage",
+                "action": "input_charge_voltage",
                 "left": 118,
                 "top": 0,
                 "width": 80,
