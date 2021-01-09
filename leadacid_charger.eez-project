@@ -21,41 +21,64 @@
       "defaultValue": "0"
     },
     {
-      "name": "cell_count",
-      "type": "integer",
-      "defaultValue": "6"
-    },
-    {
-      "name": "termination_voltage",
+      "name": "charge_voltage",
       "type": "float",
-      "defaultValue": "cell_count * cell_charge_voltage"
+      "defaultValue": "0"
     },
     {
-      "name": "cell_charge_voltage",
+      "name": "termination_current",
       "type": "float",
-      "defaultValue": "2.3"
+      "defaultValue": "0"
     },
     {
-      "name": "Vmon",
+      "name": "Vmeas",
       "type": "float",
       "defaultValue": "0 V"
     },
     {
-      "name": "Imon",
+      "name": "Imeas",
       "type": "float",
       "defaultValue": "0 mA"
     },
     {
-      "name": "charge_state",
+      "name": "disp_state",
       "type": "enum",
-      "enumItems": "[\n    \"Stopped\",\n    \"Charging\"\n]"
+      "enumItems": "[\n    \"setup\",\n    \"calc\",\n    \"charging\"\n]",
+      "defaultValue": "0"
     },
     {
       "name": "datalog_filename",
       "type": "string"
     },
     {
-      "name": "amp_hour"
+      "name": "elapsed_amp_hour",
+      "defaultValue": "0"
+    },
+    {
+      "name": "calc_chemistry",
+      "type": "enum",
+      "enumItems": "[\n    \"custom\",\n    \"lead_acid\",\n    \"li-ion\"\n]",
+      "defaultValue": "0"
+    },
+    {
+      "name": "cell_count",
+      "type": "integer",
+      "defaultValue": "1"
+    },
+    {
+      "name": "cell_charge_voltage",
+      "type": "float",
+      "defaultValue": "0"
+    },
+    {
+      "name": "c_rate_charge",
+      "type": "float",
+      "defaultValue": "0"
+    },
+    {
+      "name": "c_rate_term",
+      "type": "float",
+      "defaultValue": "0"
     }
   ],
   "actions": [
@@ -63,10 +86,25 @@
       "name": "input_charge_current"
     },
     {
-      "name": "close"
+      "name": "input_charge_voltage"
+    },
+    {
+      "name": "input_termination_current"
+    },
+    {
+      "name": "input_filename"
     },
     {
       "name": "start"
+    },
+    {
+      "name": "stop"
+    },
+    {
+      "name": "close"
+    },
+    {
+      "name": "select_chemistry"
     },
     {
       "name": "input_cell_count"
@@ -75,16 +113,22 @@
       "name": "input_cell_voltage"
     },
     {
-      "name": "stop"
+      "name": "input_c_rate_charge"
     },
     {
-      "name": "input_filename"
+      "name": "input_c_rate_term"
+    },
+    {
+      "name": "view_setup"
+    },
+    {
+      "name": "view_calculator"
     }
   ],
   "gui": {
     "pages": [
       {
-        "name": "Main",
+        "name": "main",
         "widgets": [
           {
             "type": "Container",
@@ -118,10 +162,524 @@
                 "top": 0,
                 "width": 439,
                 "height": 32,
-                "text": "Lead Acid Battery Charge"
+                "text": "CC-CV Battery Charge Profile"
               }
             ]
           },
+          {
+            "type": "Container",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "left": 0,
+            "top": 0,
+            "width": 480,
+            "height": 240,
+            "name": "display",
+            "widgets": [
+              {
+                "type": "Select",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "data": "disp_state",
+                "left": 0,
+                "top": 0,
+                "width": 120,
+                "height": 32,
+                "widgets": [
+                  {
+                    "type": "LayoutView",
+                    "style": {
+                      "inheritFrom": "default"
+                    },
+                    "left": 0,
+                    "top": 0,
+                    "width": 64,
+                    "height": 32,
+                    "layout": "setup"
+                  },
+                  {
+                    "type": "LayoutView",
+                    "style": {
+                      "inheritFrom": "default"
+                    },
+                    "left": 0,
+                    "top": 0,
+                    "width": 64,
+                    "height": 32,
+                    "layout": "calc"
+                  },
+                  {
+                    "type": "LayoutView",
+                    "style": {
+                      "inheritFrom": "default"
+                    },
+                    "left": 0,
+                    "top": 0,
+                    "width": 64,
+                    "height": 32,
+                    "layout": "charging"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "Select",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "data": "disp_state",
+            "left": 342,
+            "top": 13,
+            "width": 120,
+            "height": 40,
+            "widgets": [
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "button_M"
+                },
+                "action": "view_calculator",
+                "left": 0,
+                "top": 0,
+                "width": 120,
+                "height": 40,
+                "text": "Calculator"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "button_M"
+                },
+                "action": "view_setup",
+                "left": 0,
+                "top": 0,
+                "width": 120,
+                "height": 40,
+                "text": "Done"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "left": 0,
+                "top": 0,
+                "width": 64,
+                "height": 32,
+                "text": ""
+              }
+            ]
+          },
+          {
+            "type": "Select",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "data": "disp_state",
+            "left": 0,
+            "top": 200,
+            "width": 100,
+            "height": 40,
+            "widgets": [
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "button_M"
+                },
+                "action": "start",
+                "left": 0,
+                "top": 0,
+                "width": 100,
+                "height": 40,
+                "text": "Start"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "left": 0,
+                "top": 0,
+                "width": 64,
+                "height": 32,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "button_M"
+                },
+                "action": "stop",
+                "left": 0,
+                "top": 0,
+                "width": 100,
+                "height": 40,
+                "text": "Stop"
+              }
+            ]
+          }
+        ],
+        "closePageIfTouchedOutside": false,
+        "left": 0,
+        "top": 0,
+        "width": 480,
+        "height": 272
+      },
+      {
+        "name": "charging",
+        "widgets": [
+          {
+            "type": "Container",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "left": 0,
+            "top": 0,
+            "width": 480,
+            "height": 240,
+            "widgets": [
+              {
+                "type": "DisplayData",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "data": "Vmeas",
+                "left": 138,
+                "top": 104,
+                "width": 80,
+                "height": 32,
+                "displayOption": 0
+              },
+              {
+                "type": "DisplayData",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "data": "Imeas",
+                "left": 218,
+                "top": 104,
+                "width": 80,
+                "height": 32,
+                "displayOption": 0
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "data": "elapsed_amp_hour",
+                "left": 298,
+                "top": 104,
+                "width": 80,
+                "height": 32,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 49,
+                "top": 104,
+                "width": 89,
+                "height": 32,
+                "text": "Battery:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "left": 379,
+                "top": 104,
+                "width": 50,
+                "height": 32,
+                "text": "hr"
+              }
+            ]
+          }
+        ],
+        "left": 0,
+        "top": 0,
+        "width": 120,
+        "height": 40
+      },
+      {
+        "name": "calc",
+        "widgets": [
+          {
+            "type": "Container",
+            "style": {
+              "inheritFrom": "default"
+            },
+            "left": 0,
+            "top": 0,
+            "width": 480,
+            "height": 240,
+            "widgets": [
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 0,
+                "width": 112,
+                "height": 32,
+                "text": "Cell Count:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "edit_value_active_S_center"
+                },
+                "data": "cell_count",
+                "action": "input_cell_count",
+                "left": 132,
+                "top": 0,
+                "width": 64,
+                "height": 32,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 40,
+                "width": 123,
+                "height": 32,
+                "text": "Cell Voltage:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "edit_value_active_S_center"
+                },
+                "data": "cell_charge_voltage",
+                "action": "input_cell_voltage",
+                "left": 132,
+                "top": 40,
+                "width": 64,
+                "height": 32,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 120,
+                "width": 228,
+                "height": 32,
+                "text": "Battery Capacity (AHr):"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "edit_value_active_S_center"
+                },
+                "data": "cell_count",
+                "action": "input_cell_count",
+                "left": 228,
+                "top": 121,
+                "width": 60,
+                "height": 32,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_S_left"
+                },
+                "left": 220,
+                "top": 72,
+                "width": 139,
+                "height": 32,
+                "text": "Chemistry Preset:"
+              },
+              {
+                "type": "Select",
+                "style": {
+                  "inheritFrom": "default"
+                },
+                "data": "calc_chemistry",
+                "action": "select_chemistry",
+                "left": 367,
+                "top": 10,
+                "width": 100,
+                "height": 32,
+                "widgets": [
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "edit_value_active_M_center"
+                    },
+                    "data": "",
+                    "action": "",
+                    "left": -9,
+                    "top": 62,
+                    "width": 100,
+                    "height": 32,
+                    "text": "Custom"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "edit_value_active_M_center"
+                    },
+                    "left": 0,
+                    "top": 0,
+                    "width": 100,
+                    "height": 32,
+                    "text": "Lead Acid"
+                  },
+                  {
+                    "type": "Text",
+                    "style": {
+                      "inheritFrom": "edit_value_active_M_center"
+                    },
+                    "left": 0,
+                    "top": 0,
+                    "width": 100,
+                    "height": 32,
+                    "text": "Li-ion"
+                  }
+                ]
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 80,
+                "width": 113,
+                "height": 32,
+                "text": "CV Voltage:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "status_bgnd"
+                },
+                "data": "charge_voltage",
+                "left": 132,
+                "top": 80,
+                "width": 64,
+                "height": 32,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 200,
+                "width": 132,
+                "height": 32,
+                "text": "Term C Rate:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 160,
+                "width": 146,
+                "height": 32,
+                "text": "Charge C Rate:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 228,
+                "top": 160,
+                "width": 165,
+                "height": 32,
+                "text": "Charge Current: "
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 228,
+                "top": 200,
+                "width": 139,
+                "height": 32,
+                "text": "Term Current:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "edit_value_active_M_center"
+                },
+                "data": "c_rate_charge",
+                "action": "input_c_rate_charge",
+                "left": 156,
+                "top": 160,
+                "width": 64,
+                "height": 32,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "status_bgnd"
+                },
+                "data": "charge_current",
+                "left": 382,
+                "top": 160,
+                "width": 64,
+                "height": 32,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "edit_value_active_M_center"
+                },
+                "data": "c_rate_term",
+                "action": "input_c_rate_term",
+                "left": 156,
+                "top": 200,
+                "width": 64,
+                "height": 32,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "status_bgnd"
+                },
+                "data": "termination_current",
+                "left": 382,
+                "top": 200,
+                "width": 64,
+                "height": 32,
+                "text": ""
+              }
+            ]
+          }
+        ],
+        "left": 0,
+        "top": 0,
+        "width": 480,
+        "height": 240
+      },
+      {
+        "name": "setup",
+        "widgets": [
           {
             "type": "Container",
             "style": {
@@ -139,25 +697,14 @@
                   "inheritFrom": "default_M_left"
                 },
                 "left": 0,
-                "top": 0,
-                "width": 112,
+                "top": 40,
+                "width": 118,
                 "height": 32,
-                "text": "Cell Count:"
-              },
-              {
-                "type": "Text",
-                "style": {
-                  "inheritFrom": "default_M_left"
-                },
-                "left": 0,
-                "top": 88,
-                "width": 156,
-                "height": 40,
                 "resizing": {
                   "pinToEdge": 0,
                   "fixSize": 1
                 },
-                "text": "Charge Current:"
+                "text": "CC Current:"
               },
               {
                 "type": "Text",
@@ -166,70 +713,10 @@
                 },
                 "data": "charge_current",
                 "action": "input_charge_current",
-                "left": 156,
-                "top": 88,
-                "width": 80,
-                "height": 40,
-                "text": ""
-              },
-              {
-                "type": "Text",
-                "style": {
-                  "inheritFrom": "edit_value_active_S_center"
-                },
-                "data": "cell_count",
-                "action": "input_cell_count",
-                "left": 104,
-                "top": 0,
-                "width": 60,
-                "height": 40,
-                "text": ""
-              },
-              {
-                "type": "Text",
-                "style": {
-                  "inheritFrom": "default_M_left"
-                },
-                "left": 179,
-                "top": 0,
-                "width": 202,
-                "height": 32,
-                "text": "Cell Charge Voltage:"
-              },
-              {
-                "type": "Text",
-                "style": {
-                  "inheritFrom": "edit_value_active_S_center"
-                },
-                "data": "cell_charge_voltage",
-                "action": "input_cell_voltage",
-                "left": 381,
-                "top": 0,
-                "width": 80,
-                "height": 40,
-                "text": ""
-              },
-              {
-                "type": "Text",
-                "style": {
-                  "inheritFrom": "default_M_left"
-                },
-                "left": 0,
-                "top": 48,
-                "width": 275,
-                "height": 32,
-                "text": "Charge Termination Voltage:"
-              },
-              {
-                "type": "Text",
-                "style": {
-                  "inheritFrom": "status_bgnd"
-                },
-                "data": "termination_voltage",
-                "left": 275,
+                "left": 118,
                 "top": 40,
                 "width": 80,
-                "height": 40,
+                "height": 32,
                 "text": ""
               },
               {
@@ -238,7 +725,54 @@
                   "inheritFrom": "default_M_left"
                 },
                 "left": 0,
-                "top": 141,
+                "top": 0,
+                "width": 118,
+                "height": 32,
+                "text": "CV Voltage:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "edit_value_active_M_center"
+                },
+                "data": "charge_voltage",
+                "left": 118,
+                "top": 0,
+                "width": 80,
+                "height": 32,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 80,
+                "width": 198,
+                "height": 32,
+                "text": "Termination Current:"
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "edit_value_active_M_center"
+                },
+                "data": "termination_current",
+                "action": "input_termination_current",
+                "left": 198,
+                "top": 80,
+                "width": 64,
+                "height": 32,
+                "text": ""
+              },
+              {
+                "type": "Text",
+                "style": {
+                  "inheritFrom": "default_M_left"
+                },
+                "left": 0,
+                "top": 120,
                 "width": 171,
                 "height": 32,
                 "text": "Datalog Filename:"
@@ -250,59 +784,11 @@
                 },
                 "data": "datalog_filename",
                 "action": "input_filename",
-                "left": 187,
-                "top": 141,
+                "left": 175,
+                "top": 120,
                 "width": 274,
                 "height": 32,
                 "text": ""
-              }
-            ]
-          },
-          {
-            "type": "Container",
-            "style": {
-              "inheritFrom": "default"
-            },
-            "left": 0,
-            "top": 190,
-            "width": 480,
-            "height": 50,
-            "name": "status",
-            "widgets": [
-              {
-                "type": "Select",
-                "style": {
-                  "inheritFrom": "default"
-                },
-                "data": "charge_state",
-                "left": 0,
-                "top": 0,
-                "width": 120,
-                "height": 40,
-                "widgets": [
-                  {
-                    "type": "LayoutView",
-                    "style": {
-                      "inheritFrom": "default"
-                    },
-                    "left": 0,
-                    "top": 0,
-                    "width": 120,
-                    "height": 40,
-                    "layout": "Running"
-                  },
-                  {
-                    "type": "LayoutView",
-                    "style": {
-                      "inheritFrom": "default"
-                    },
-                    "left": 0,
-                    "top": 0,
-                    "width": 120,
-                    "height": 40,
-                    "layout": "Start"
-                  }
-                ]
               }
             ]
           }
@@ -311,132 +797,7 @@
         "left": 0,
         "top": 0,
         "width": 480,
-        "height": 272
-      },
-      {
-        "name": "Start",
-        "widgets": [
-          {
-            "type": "Container",
-            "style": {
-              "inheritFrom": "default"
-            },
-            "left": 0,
-            "top": 0,
-            "width": 480,
-            "height": 50,
-            "widgets": [
-              {
-                "type": "Text",
-                "style": {
-                  "inheritFrom": "button_M"
-                },
-                "data": "charge_state",
-                "action": "start",
-                "left": 0,
-                "top": 0,
-                "width": 120,
-                "height": 40,
-                "text": "Start"
-              }
-            ]
-          }
-        ],
-        "left": 0,
-        "top": 0,
-        "width": 120,
-        "height": 40
-      },
-      {
-        "name": "Running",
-        "widgets": [
-          {
-            "type": "Container",
-            "style": {
-              "inheritFrom": "default"
-            },
-            "left": 0,
-            "top": 0,
-            "width": 480,
-            "height": 50,
-            "widgets": []
-          },
-          {
-            "type": "Text",
-            "style": {
-              "inheritFrom": "button_M"
-            },
-            "data": "charge_state",
-            "action": "stop",
-            "left": 0,
-            "top": 0,
-            "width": 100,
-            "height": 40,
-            "text": "Stop"
-          },
-          {
-            "type": "DisplayData",
-            "style": {
-              "inheritFrom": "default"
-            },
-            "data": "Vmon",
-            "left": 189,
-            "top": 8,
-            "width": 80,
-            "height": 32,
-            "displayOption": 0
-          },
-          {
-            "type": "DisplayData",
-            "style": {
-              "inheritFrom": "default"
-            },
-            "data": "Imon",
-            "left": 269,
-            "top": 8,
-            "width": 80,
-            "height": 32,
-            "displayOption": 0
-          },
-          {
-            "type": "Text",
-            "style": {
-              "inheritFrom": "default"
-            },
-            "data": "amp_hour",
-            "left": 349,
-            "top": 8,
-            "width": 80,
-            "height": 32,
-            "text": ""
-          },
-          {
-            "type": "Text",
-            "style": {
-              "inheritFrom": "default_M_left"
-            },
-            "left": 100,
-            "top": 8,
-            "width": 89,
-            "height": 32,
-            "text": "Battery:"
-          },
-          {
-            "type": "Text",
-            "style": {
-              "inheritFrom": "default"
-            },
-            "left": 430,
-            "top": 8,
-            "width": 50,
-            "height": 32,
-            "text": "Ahr"
-          }
-        ],
-        "left": 0,
-        "top": 0,
-        "width": 120,
-        "height": 40
+        "height": 190
       }
     ],
     "styles": [],

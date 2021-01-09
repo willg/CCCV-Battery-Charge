@@ -6,7 +6,7 @@ from utime import sleep
 # default values
 cell_count = 6
 cell_charge_voltage = 2.3
-termination_voltage = cell_count * cell_charge_voltage
+charge_voltage = cell_count * cell_charge_voltage
 charge_current = 0.1
 datalog_filename = "chargeLog"
 
@@ -14,25 +14,25 @@ channel = 1
 
 def input_cell_count():
     global cell_count
-    global termination_voltage
+    global charge_voltage
     global cell_charge_voltage
     value = scpi('DISP:INPut? "",INT, 0, 10, 6')
     if value != None:
         cell_count = int(value)
-        termination_voltage = cell_count * cell_charge_voltage
+        charge_voltage = cell_count * cell_charge_voltage
         scpi('DISP:DIALog:DATA "cell_count",INT,' + str(cell_count))
-        scpi('DISP:DIALog:DATA "termination_voltage",FLOAT,VOLT,' + str(termination_voltage))
+        scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
 
 def input_cell_voltage():
     global cell_count
     global cell_charge_voltage
-    global termination_voltage
+    global charge_voltage
     value = scpi('DISP:INPut? "",NUMBER,VOLT, 0.0, 5.0, 2.3')
     if value != None:
         cell_charge_voltage = float(value)
-        termination_voltage = cell_count * cell_charge_voltage
+        charge_voltage = cell_count * cell_charge_voltage
         scpi('DISP:DIALog:DATA "cell_charge_voltage",FLOAT,VOLT,' + str(cell_charge_voltage))
-        scpi('DISP:DIALog:DATA "termination_voltage",FLOAT,VOLT,' + str(termination_voltage))
+        scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
 
 def input_charge_current():
     global charge_current
@@ -50,12 +50,12 @@ def input_filename():
 
 def set_charge_param():
     scpi("INST ch1")
-    scpi("VOLT " + str(termination_voltage))
+    scpi("VOLT " + str(charge_voltage))
     scpi("CURR " + str(charge_current))
     scpi("OUTP 1")
 
 def startDatalogging():
-    global termination_voltage, charge_current, datalog_filename
+    global charge_voltage, charge_current, datalog_filename
     scpi('SENS:DLOG:TRAC:X:UNIT SECOND')
     scpi('SENS:DLOG:TRAC:X:STEP 1')
     scpi("SENS:DLOG:TRAC:X:RANG:MAX 10")
@@ -64,7 +64,7 @@ def startDatalogging():
     scpi('SENS:DLOG:TRAC:Y1:LABel "V"')
     scpi('SENS:DLOG:TRAC:Y1:UNIT VOLT')
     scpi('SENS:DLOG:TRAC:Y1:RANG:MIN 0')
-    scpi('SENS:DLOG:TRAC:Y1:RANG:MAX ' + str(termination_voltage*1.1))
+    scpi('SENS:DLOG:TRAC:Y1:RANG:MAX ' + str(charge_voltage*1.1))
 
     scpi('SENS:DLOG:TRAC:Y2:LABel "I"')
     scpi('SENS:DLOG:TRAC:Y2:UNIT AMPER')
@@ -93,9 +93,9 @@ def charge():
         total_amp_seconds = 0
         total_amp_hour = 0
 
-        scpi("DISP:DIAL:DATA \"Vmon\", FLOAT, VOLT, " + str(uMon))
-        scpi("DISP:DIAL:DATA \"Imon\", FLOAT, AMPER, " + str(iMon))
-        scpi('DISP:DIAL:DATA "amp_hour", FLOAT, AMPER, ' + str(total_amp_hour))
+        scpi('DISP:DIAL:DATA "Vmeas", FLOAT, VOLT, ' + str(uMon))
+        scpi('DISP:DIAL:DATA "Imeas", FLOAT, AMPER, ' + str(iMon))
+        scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, ' + str(total_amp_hour))
 
         action = ""
 
@@ -113,9 +113,9 @@ def charge():
             dlogTraceData(uMon, iMon, total_amp_hour)
             #dlogTraceData(uMon, iMon)
 
-            scpi("DISP:DIAL:DATA \"Vmon\", FLOAT, VOLT, " + str(uMon))
-            scpi("DISP:DIAL:DATA \"Imon\", FLOAT, AMPER, " + str(iMon))
-            scpi('DISP:DIAL:DATA "amp_hour", FLOAT, AMPER, ' + str(total_amp_hour))
+            scpi('DISP:DIAL:DATA "Vmeas", FLOAT, VOLT, ' + str(uMon))
+            scpi('DISP:DIAL:DATA "Imeas", FLOAT, AMPER, ' + str(iMon))
+            scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, ' + str(total_amp_hour))
 
             action = scpi("DISP:DIALog:ACTIon? 1000ms")
 
@@ -126,7 +126,7 @@ def charge():
 def main():
     global cell_count
     global cell_charge_voltage
-    global termination_voltage
+    global charge_voltage
     global charge_current
     global datalog_filename
 
@@ -135,10 +135,10 @@ def main():
     # initialize display
     scpi('DISP:DIALog:DATA "cell_count",INT,' + str(cell_count))
     scpi('DISP:DIALog:DATA "cell_charge_voltage",FLOAT,VOLT,' + str(cell_charge_voltage))
-    scpi('DISP:DIALog:DATA "termination_voltage",FLOAT,VOLT,' + str(termination_voltage))
+    scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
     scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
     scpi('DISP:DIAL:DATA "datalog_filename",STR,' + str(datalog_filename))
-    scpi('DISP:DIAL:DATA "charge_state", INT, 1')
+    scpi('DISP:DIAL:DATA "disp_state", INT, 0')
 
     try:
         while True:
@@ -151,10 +151,14 @@ def main():
                 input_charge_current()
             if action == "input_filename":
                 input_filename()
+            if action == "view_setup":
+                scpi('DISP:DIAL:DATA "disp_state", INT, 0')
+            if action == "view_calculator":
+                scpi('DISP:DIAL:DATA "disp_state", INT, 1')
             elif action == "start":
-                scpi('DISP:DIAL:DATA "charge_state", INT, 0')
+                scpi('DISP:DIAL:DATA "disp_state", INT, 2')
                 charge()
-                scpi('DISP:DIAL:DATA "charge_state", INT, 1')
+                scpi('DISP:DIAL:DATA "disp_state", INT, 0')
             elif action == "close" or action == 0:
                 break
         
