@@ -8,6 +8,7 @@ Done
 * accepts filename for datalogging charge
 * datalogs charge
 * ~additional view with presets?~ this became the "calculator"
+* clean-up python string quoting
 
 
 TODO
@@ -16,6 +17,5 @@ TODO
 * button to view datalog
 * default filename based on date/time?
 * rename script to something like "CC-CV Battery Charge"
-* clean-up python string quoting
 * clean-up python globals, these were copied from other scripts but look
   unnecessary?
