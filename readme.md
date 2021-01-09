@@ -15,6 +15,10 @@ Done
 * rename script to something like "CC-CV Battery Charge"
 
 TODO
+* implement calculator presets
+* select output channel?
+* add maximum charge time?
+* fix exit buttom behaviour in nested loops
 * default filename based on date/time?
 * clean-up python globals, these were copied from other scripts but look
   unnecessary?
