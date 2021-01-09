@@ -30,12 +30,12 @@ def input_int(minimum, maximum, default):
     else:
         return int(default)
 
-def input_filename():
-    global datalog_filename
-    value = scpi('DISP:INPut? "", TEXT, 2, 20, "chargeLog"')
+def input_text(minimum, maximum, default):
+    value = scpi('DISP:INPut? "", TEXT,'+str(minimum)+','+str(maximum)+','+default)
     if value != None:
-        datalog_filename = value
-        scpi('DISP:DIAL:DATA "datalog_filename",STR, ' + datalog_filename)
+        return value
+    else:
+        return default
 
 def set_charge_param():
     scpi("INST ch1")
@@ -175,7 +175,6 @@ def main():
 
     scpi("DISP:DIAL:OPEN \"/Scripts/leadacid_charger.res\"")
 
-
     try:
         while True:
             display_setup_pane()
@@ -187,7 +186,7 @@ def main():
             elif action == "input_termination_current":
                 termination_current = input_float("AMPER", 0, 5, charge_current)
             elif action == "input_filename":
-                input_filename()
+                datalog_filename = input_text(2, 30, datalog_filename)
             elif action == "view_calculator":
                 calculator_loop()
                 display_setup_pane()
