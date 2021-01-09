@@ -20,11 +20,15 @@ def input_float(unit, minimum, maximum, default):
     value = scpi('DISP:INPut? "",NUMBER,'+unit+','+str(minimum)+','+str(maximum)+','+str(default))
     if value != None:
         return float(value)
+    else:
+        return float(default)
 
 def input_int(minimum, maximum, default):
     value = scpi('DISP:INPut? "",INT,'+str(minimum)+','+str(maximum)+','+str(default))
     if value != None:
         return int(value)
+    else:
+        return int(default)
 
 def input_filename():
     global datalog_filename
