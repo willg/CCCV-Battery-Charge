@@ -144,13 +144,22 @@ class calculator():
     calc_chemistry
 
     def __init__(self):
-        # initialize for 1Ahr 12V lead acid
+        self.battery_capacity = 1
+        self.preset_lead_acid()
+
+    def preset_lead_acid(self):
+        self.calc_chemistry = 0 # lead acid in display
         self.cell_count = 6
         self.cell_charge_voltage = 2.3
         self.c_rate_charge = 0.3
         self.c_rate_term = 0.05
-        self.calc_chemistry = 0 # lead acid
-        self.battery_capacity = 1
+
+    def preset_li_ion(self):
+        self.calc_chemistry = 1 # li-ion in  display
+        self.cell_count = 1
+        self.cell_charge_voltage = 4.2
+        self.c_rate_charge = 0.5
+        self.c_rate_term = 0.05
 
     def write_display(self):
         scpi('DISP:DIAL:DATA "disp_state", INT, 1')
@@ -165,13 +174,14 @@ class calculator():
         scpi('DISP:DIALog:DATA "calc_chemistry",INT,' + str(self.calc_chemistry))
 
     def calculate(self):
+        global charge_voltage, charge_current, termination_current
         charge_voltage = self.cell_count * self.cell_charge_voltage
         charge_current = self.battery_capacity * self.c_rate_charge
         termination_current = self.battery_capacity * self.c_rate_term
 
     def loop(self):
-        global charge_voltage, charge_current, termination_current
         while True:
+            self.calculate()
             self.write_display()
 
             action = scpi('DISP:DIALog:ACTIon?')
@@ -196,15 +206,9 @@ class calculator():
                     self.calc_chemistry = 0
 
                 if self.calc_chemistry == 0: # lead acid
-                    self.cell_charge_voltage = 2.3
-                    self.cell_count = 6
-                    self.c_rate_charge = 0.3
-                    self.c_rate_term = 0.05
+                    self.preset_lead_acid()
                 elif self.calc_chemistry == 1: # li-ion
-                    self.cell_charge_voltage = 4.2
-                    self.cell_count = 1
-                    self.c_rate_charge = 0.5
-                    self.c_rate_term = 0.05
+                    self.preset_li_ion()
 
                 self.calculate()
             elif action == 'view_setup':
