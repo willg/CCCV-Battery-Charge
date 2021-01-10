@@ -15,6 +15,7 @@ charge_current = battery_capacity * c_rate_charge
 termination_current = battery_capacity * c_rate_term
 total_amp_hour = 0
 total_seconds = 0
+calc_chemistry = 0
 
 channel = 1
 
@@ -151,6 +152,7 @@ def display_calculator_pane():
     scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
     scpi('DISP:DIALog:DATA "c_rate_charge",FLOAT,UNKN,' + str(c_rate_charge))
     scpi('DISP:DIALog:DATA "c_rate_term",FLOAT,UNKN,' + str(c_rate_term))
+    scpi('DISP:DIALog:DATA "calc_chemistry",INT,' + str(calc_chemistry))
 
 def calculator_loop():
     global cell_count
@@ -161,6 +163,7 @@ def calculator_loop():
     global c_rate_charge
     global c_rate_term
     global charge_current
+    global calc_chemistry
 
     while True:
         display_calculator_pane()
@@ -181,6 +184,25 @@ def calculator_loop():
             charge_current = battery_capacity * c_rate_charge
         elif action == 'input_c_rate_term':
             c_rate_term = input_float('UNKN', 0, 50, c_rate_term)
+            termination_current = battery_capacity * c_rate_term
+        elif action == 'select_next_chemistry':
+            calc_chemistry += 1
+            if calc_chemistry > 1:
+                calc_chemistry = 0
+
+            if calc_chemistry == 0: # lead acid
+                cell_charge_voltage = 2.3
+                cell_count = 6
+                c_rate_charge = 0.3
+                c_rate_term = 0.05
+            elif calc_chemistry == 1: # li-ion
+                cell_charge_voltage = 4.2
+                cell_count = 1
+                c_rate_charge = 0.5
+                c_rate_term = 0.05
+
+            charge_voltage = cell_count * cell_charge_voltage
+            charge_current = battery_capacity * c_rate_charge
             termination_current = battery_capacity * c_rate_term
         elif action == 'view_setup':
             break

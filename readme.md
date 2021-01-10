@@ -13,9 +13,9 @@ Done
 * additional view to display stats at end of charge
 * button to view datalog
 * rename script to something like "CC-CV Battery Charge"
+* implement calculator presets
 
 TODO
-* implement calculator presets
 * select output channel?
 * add maximum charge time?
 * fix exit buttom behaviour in nested loops
