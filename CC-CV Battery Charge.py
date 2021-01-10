@@ -4,18 +4,11 @@ from eez import scpi, getI, getU, dlogTraceData
 from utime import sleep
 
 # default values
-cell_count = 6
-cell_charge_voltage = 2.3
-battery_capacity = 1
-charge_voltage = cell_count * cell_charge_voltage
+charge_voltage = 13.8
 datalog_filename = 'chargeLog'
-c_rate_charge = 0.3
-c_rate_term = 0.05
-charge_current = battery_capacity * c_rate_charge
-termination_current = battery_capacity * c_rate_term
-total_amp_hour = 0
+charge_current = 1.0
+termination_current = 0.05
 total_seconds = 0
-calc_chemistry = 0
 
 channel = 1
 
@@ -142,73 +135,83 @@ def display_setup_pane():
     scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
     scpi('DISP:DIAL:DATA "datalog_filename",STR,' + str(datalog_filename))
 
-def display_calculator_pane():
-    scpi('DISP:DIAL:DATA "disp_state", INT, 1')
-    scpi('DISP:DIALog:DATA "cell_count",INT,' + str(cell_count))
-    scpi('DISP:DIALog:DATA "cell_charge_voltage",FLOAT,VOLT,' + str(cell_charge_voltage))
-    scpi('DISP:DIALog:DATA "battery_capacity",FLOAT,AMPER,' + str(battery_capacity))
-    scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
-    scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
-    scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
-    scpi('DISP:DIALog:DATA "c_rate_charge",FLOAT,UNKN,' + str(c_rate_charge))
-    scpi('DISP:DIALog:DATA "c_rate_term",FLOAT,UNKN,' + str(c_rate_term))
-    scpi('DISP:DIALog:DATA "calc_chemistry",INT,' + str(calc_chemistry))
+class calculator():
+    cell_count
+    cell_charge_voltage
+    battery_capacity
+    c_rate_charge
+    c_rate_term
+    calc_chemistry
 
-def calculator_loop():
-    global cell_count
-    global cell_charge_voltage
-    global charge_voltage
-    global battery_capacity
-    global termination_current 
-    global c_rate_charge
-    global c_rate_term
-    global charge_current
-    global calc_chemistry
+    def __init__(self):
+        # initialize for 1Ahr 12V lead acid
+        self.cell_count = 6
+        self.cell_charge_voltage = 2.3
+        self.c_rate_charge = 0.3
+        self.c_rate_term = 0.05
+        self.calc_chemistry = 0 # lead acid
+        self.battery_capacity = 1
 
-    while True:
-        display_calculator_pane()
+    def write_display(self):
+        scpi('DISP:DIAL:DATA "disp_state", INT, 1')
+        scpi('DISP:DIALog:DATA "cell_count",INT,' + str(self.cell_count))
+        scpi('DISP:DIALog:DATA "cell_charge_voltage",FLOAT,VOLT,' + str(self.cell_charge_voltage))
+        scpi('DISP:DIALog:DATA "battery_capacity",FLOAT,AMPER,' + str(self.battery_capacity))
+        scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
+        scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
+        scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
+        scpi('DISP:DIALog:DATA "c_rate_charge",FLOAT,UNKN,' + str(self.c_rate_charge))
+        scpi('DISP:DIALog:DATA "c_rate_term",FLOAT,UNKN,' + str(self.c_rate_term))
+        scpi('DISP:DIALog:DATA "calc_chemistry",INT,' + str(self.calc_chemistry))
 
-        action = scpi('DISP:DIALog:ACTIon?')
-        if action == 'input_cell_count':
-            cell_count = input_int(0, 10, cell_count)
-            charge_voltage = cell_count * cell_charge_voltage
-        elif action == 'input_cell_voltage':
-            cell_charge_voltage = input_float('VOLT', 0, 10, cell_charge_voltage)
-            charge_voltage = cell_count * cell_charge_voltage
-        elif action == 'input_battery_capacity':
-            battery_capacity = input_float('AMPER', 0, 50, battery_capacity)
-            charge_current = battery_capacity * c_rate_charge
-            termination_current = battery_capacity * c_rate_term
-        elif action == 'input_c_rate_charge':
-            c_rate_charge = input_float('UNKN', 0, 50, c_rate_charge)
-            charge_current = battery_capacity * c_rate_charge
-        elif action == 'input_c_rate_term':
-            c_rate_term = input_float('UNKN', 0, 50, c_rate_term)
-            termination_current = battery_capacity * c_rate_term
-        elif action == 'select_next_chemistry':
-            calc_chemistry += 1
-            if calc_chemistry > 1:
-                calc_chemistry = 0
+    def calculate(self):
+        charge_voltage = self.cell_count * self.cell_charge_voltage
+        charge_current = self.battery_capacity * self.c_rate_charge
+        termination_current = self.battery_capacity * self.c_rate_term
 
-            if calc_chemistry == 0: # lead acid
-                cell_charge_voltage = 2.3
-                cell_count = 6
-                c_rate_charge = 0.3
-                c_rate_term = 0.05
-            elif calc_chemistry == 1: # li-ion
-                cell_charge_voltage = 4.2
-                cell_count = 1
-                c_rate_charge = 0.5
-                c_rate_term = 0.05
+    def loop(self):
+        global charge_voltage, charge_current, termination_current
+        while True:
+            self.write_display()
 
-            charge_voltage = cell_count * cell_charge_voltage
-            charge_current = battery_capacity * c_rate_charge
-            termination_current = battery_capacity * c_rate_term
-        elif action == 'view_setup':
-            break
-        elif action == 'close' or action == 0:
-            # TODO this wont actually exit...
-            break
+            action = scpi('DISP:DIALog:ACTIon?')
+            if action == 'input_cell_count':
+                self.cell_count = input_int(0, 10, self.cell_count)
+                self.calculate()
+            elif action == 'input_cell_voltage':
+                self.cell_charge_voltage = input_float('VOLT', 0, 10, self.cell_charge_voltage)
+                self.calculate()
+            elif action == 'input_battery_capacity':
+                self.battery_capacity = input_float('AMPER', 0, 50, self.battery_capacity)
+                self.calculate()
+            elif action == 'input_c_rate_charge':
+                self.c_rate_charge = input_float('UNKN', 0, 50, self.c_rate_charge)
+                self.calculate()
+            elif action == 'input_c_rate_term':
+                self.c_rate_term = input_float('UNKN', 0, 50, self.c_rate_term)
+                self.calculate()
+            elif action == 'select_next_chemistry':
+                self.calc_chemistry += 1
+                if self.calc_chemistry > 1:
+                    self.calc_chemistry = 0
+
+                if self.calc_chemistry == 0: # lead acid
+                    self.cell_charge_voltage = 2.3
+                    self.cell_count = 6
+                    self.c_rate_charge = 0.3
+                    self.c_rate_term = 0.05
+                elif self.calc_chemistry == 1: # li-ion
+                    self.cell_charge_voltage = 4.2
+                    self.cell_count = 1
+                    self.c_rate_charge = 0.5
+                    self.c_rate_term = 0.05
+
+                self.calculate()
+            elif action == 'view_setup':
+                break
+            elif action == 'close' or action == 0:
+                # TODO this wont actually exit...
+                break
 
 def display_done_pane():
     scpi('DISP:DIAL:DATA "disp_state", INT, 3')
@@ -237,6 +240,8 @@ def main():
     global termination_current
     global datalog_filename
 
+    calc = calculator()
+
     scpi('DISP:DIAL:OPEN "/Scripts/CC-CV Battery Charge.res"')
 
     try:
@@ -252,7 +257,7 @@ def main():
             elif action == 'input_filename':
                 datalog_filename = input_text(2, 30, datalog_filename)
             elif action == 'view_calculator':
-                calculator_loop()
+                calc.loop()
             elif action == 'start':
                 charge()
                 done_loop()
