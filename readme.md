@@ -22,3 +22,5 @@ TODO
 * default filename based on date/time?
 * clean-up python globals, these were copied from other scripts but look
   unnecessary?
+* spaces in the filename causes an error
+* charge termination defaults to the charge current value?
