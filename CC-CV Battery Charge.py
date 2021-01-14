@@ -44,6 +44,7 @@ class charger():
 
     def loop(self):
         time_step = 1 #seconds
+        low_count = 0
         self.display_charge_pane()
         self.startDatalogging()
         uMon = getU(channel)
@@ -81,9 +82,11 @@ class charger():
                 scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, ' + str(self.total_seconds))
 
                 if iMon < termination_current:
-                    break
+                    low_count += 1
+                    if low_count >=3:
+                        break
                 else:
-                
+                    low_count = 0
 
                 action = scpi('DISP:DIALog:ACTIon? ' + str(time_step))
                 self.total_seconds += time_step
