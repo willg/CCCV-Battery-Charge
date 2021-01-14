@@ -208,7 +208,7 @@ class calculator():
 
             action = scpi('DISP:DIALog:ACTIon?')
             if action == 'input_cell_count':
-                self.cell_count = input_int(0, 10, self.cell_count)
+                self.cell_count = input_int(0, 40, self.cell_count)
                 self.calculate()
             elif action == 'input_cell_voltage':
                 self.cell_charge_voltage = input_float('VOLT', 0, 10, self.cell_charge_voltage)
