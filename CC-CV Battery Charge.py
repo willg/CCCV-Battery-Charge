@@ -85,6 +85,7 @@ def display_charge_pane():
     scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, 0')
 
 def charge():
+    low_count = 0
     global total_amp_hour, total_seconds
     display_charge_pane()
 
@@ -126,7 +127,11 @@ def charge():
             scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, ' + str(total_seconds))
 
             if iMon < termination_current:
-                break
+                low_count += 1
+                if low_count >= 3:
+                    break
+            else:
+                low_count = 0
 
             action = scpi('DISP:DIALog:ACTIon? ' + str(time_step))
             total_seconds += time_step
