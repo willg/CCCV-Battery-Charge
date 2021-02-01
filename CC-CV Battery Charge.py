@@ -4,18 +4,10 @@ from eez import scpi, getI, getU, dlogTraceData
 from utime import sleep
 
 # default values
-cell_count = 6
-cell_charge_voltage = 2.3
-battery_capacity = 1
-charge_voltage = cell_count * cell_charge_voltage
+charge_voltage = 13.8
 datalog_filename = 'chargeLog'
-c_rate_charge = 0.3
-c_rate_term = 0.05
-charge_current = battery_capacity * c_rate_charge
-termination_current = battery_capacity * c_rate_term
-total_amp_hour = 0
-total_seconds = 0
-calc_chemistry = 0
+charge_current = 1.0
+termination_current = 0.05
 
 channel = 1
 
@@ -40,105 +32,208 @@ def input_text(minimum, maximum, default):
     else:
         return default
 
-def set_charge_param():
-    scpi('INST ch1')
-    scpi('VOLT ' + str(charge_voltage))
-    scpi('CURR ' + str(charge_current))
-    scpi('OUTP 1')
+class charger():
 
-def startDatalogging():
-    global charge_voltage, charge_current, datalog_filename
-    scpi('SENS:DLOG:TRAC:X:UNIT SECOND')
-    scpi('SENS:DLOG:TRAC:X:STEP 1')
-    scpi('SENS:DLOG:TRAC:X:RANG:MAX 10')
-    scpi('SENS:DLOG:TRAC:X:LABel "Time"')
+    def __init(self):
+        self.total_seconds = 0
+        self.total_amp_hour = 0
 
-    scpi('SENS:DLOG:TRAC:Y1:LABel "V"')
-    scpi('SENS:DLOG:TRAC:Y1:UNIT VOLT')
-    scpi('SENS:DLOG:TRAC:Y1:RANG:MIN 0')
-    scpi('SENS:DLOG:TRAC:Y1:RANG:MAX ' + str(charge_voltage*1.1))
+    def set_charge_param(self):
+        scpi('INST ch1')
+        scpi('VOLT ' + str(charge_voltage))
+        scpi('CURR ' + str(charge_current))
+        scpi('OUTP 1')
 
-    scpi('SENS:DLOG:TRAC:Y2:LABel "I"')
-    scpi('SENS:DLOG:TRAC:Y2:UNIT AMPER')
-    scpi('SENS:DLOG:TRAC:Y2:RANG:MIN 0')
-    scpi('SENS:DLOG:TRAC:Y2:RANG:MAX ' + str(charge_current*1.1))
-
-    scpi('SENS:DLOG:TRAC:X:SCAL LIN')
-    scpi('SENS:DLOG:TRAC:Y:SCAL LIN')
-
-    scpi('SENS:DLOG:TRAC:Y3:LABel "Cumulative Capacity (Ahr)"')
-    scpi('SENS:DLOG:TRAC:Y3:UNIT AMPER')
-    scpi('SENS:DLOG:TRAC:Y3:RANG:MIN 0')
-    scpi('SENS:DLOG:TRAC:Y3:RANG:MAX 10')
-
-    filename = '/Recordings/' + datalog_filename + '.dlog'
-    scpi('INIT:DLOG:TRACE "' + filename + '"')
-
-def display_charge_pane():
-    scpi('DISP:DIAL:DATA "disp_state", INT, 2')
-    scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
-    scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
-    scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
-    scpi('DISP:DIAL:DATA "Vmeas", FLOAT, VOLT, 0')
-    scpi('DISP:DIAL:DATA "Imeas", FLOAT, AMPER, 0')
-    scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, 0')
-    scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, 0')
-
-def charge():
-    low_count = 0
-    global total_amp_hour, total_seconds
-    display_charge_pane()
-
-    try:
-        set_charge_param()
-        startDatalogging()
-
+    def loop(self):
+        time_step = 1 #seconds
+        low_count = 0
+        self.display_charge_pane()
+        self.startDatalogging()
         uMon = getU(channel)
         iMon = getI(channel)
 
         total_amp_seconds = 0
-        total_amp_hour = 0
-        total_seconds = 0
-        time_step = 1 #seconds
+        self.total_amp_hour = 0
+        self.total_seconds = 0
 
-        action = ''
+        try:
+            self.set_charge_param()
 
+            action = ''
+            while True:
+                if action == 'stop':
+                   break
+                elif action == 'view_datalog':
+                    scpi('DISP:WINDOW:DLOG')
+                elif action == 'close' or action == 0:
+                    # TODO this won't actually exit...
+                    break;
+
+                uMon = getU(channel)
+                iMon = getI(channel)
+
+                amp_seconds = iMon * time_step
+                total_amp_seconds += amp_seconds
+                self.total_amp_hour = total_amp_seconds/3600
+
+                dlogTraceData(uMon, iMon, self.total_amp_hour)
+
+                scpi('DISP:DIAL:DATA "Vmeas", FLOAT, VOLT, ' + str(uMon))
+                scpi('DISP:DIAL:DATA "Imeas", FLOAT, AMPER, ' + str(iMon))
+                scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, ' + str(self.total_amp_hour))
+                scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, ' + str(self.total_seconds))
+
+                if iMon < termination_current:
+                    low_count += 1
+                    if low_count >=3:
+                        break
+                else:
+                    low_count = 0
+
+                action = scpi('DISP:DIALog:ACTIon? ' + str(time_step))
+                self.total_seconds += time_step
+
+        finally:
+            scpi('OUTP 0')
+            scpi('ABOR:DLOG')
+
+        self.done_loop()
+
+    def done_loop(self):
         while True:
-            if action == 'stop':
-               break
+            self.display_done_pane()
+
+            action = scpi('DISP:DIALog:ACTIon?')
+            if action == 'start':
+                break
             elif action == 'view_datalog':
                 scpi('DISP:WINDOW:DLOG')
             elif action == 'close' or action == 0:
-                # TODO this won't actually exit...
-                break;
+                # TODO this wont actually exit...
+                break
 
-            uMon = getU(channel)
-            iMon = getI(channel)
+    def startDatalogging(self):
+        global charge_voltage, charge_current, datalog_filename
+        scpi('SENS:DLOG:TRAC:X:UNIT SECOND')
+        scpi('SENS:DLOG:TRAC:X:STEP 1')
+        scpi('SENS:DLOG:TRAC:X:RANG:MAX 10')
+        scpi('SENS:DLOG:TRAC:X:LABel "Time"')
 
-            amp_seconds = iMon * time_step
-            total_amp_seconds += amp_seconds
-            total_amp_hour = total_amp_seconds/3600
+        scpi('SENS:DLOG:TRAC:Y1:LABel "V"')
+        scpi('SENS:DLOG:TRAC:Y1:UNIT VOLT')
+        scpi('SENS:DLOG:TRAC:Y1:RANG:MIN 0')
+        scpi('SENS:DLOG:TRAC:Y1:RANG:MAX ' + str(charge_voltage*1.1))
 
-            dlogTraceData(uMon, iMon, total_amp_hour)
+        scpi('SENS:DLOG:TRAC:Y2:LABel "I"')
+        scpi('SENS:DLOG:TRAC:Y2:UNIT AMPER')
+        scpi('SENS:DLOG:TRAC:Y2:RANG:MIN 0')
+        scpi('SENS:DLOG:TRAC:Y2:RANG:MAX ' + str(charge_current*1.1))
 
-            scpi('DISP:DIAL:DATA "Vmeas", FLOAT, VOLT, ' + str(uMon))
-            scpi('DISP:DIAL:DATA "Imeas", FLOAT, AMPER, ' + str(iMon))
-            scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, ' + str(total_amp_hour))
-            scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, ' + str(total_seconds))
+        scpi('SENS:DLOG:TRAC:X:SCAL LIN')
+        scpi('SENS:DLOG:TRAC:Y:SCAL LIN')
 
-            if iMon < termination_current:
-                low_count += 1
-                if low_count >= 3:
-                    break
-            else:
-                low_count = 0
+        scpi('SENS:DLOG:TRAC:Y3:LABel "Cumulative Capacity (Ahr)"')
+        scpi('SENS:DLOG:TRAC:Y3:UNIT AMPER')
+        scpi('SENS:DLOG:TRAC:Y3:RANG:MIN 0')
+        scpi('SENS:DLOG:TRAC:Y3:RANG:MAX 10')
 
-            action = scpi('DISP:DIALog:ACTIon? ' + str(time_step))
-            total_seconds += time_step
+        filename = '/Recordings/' + datalog_filename + '.dlog'
+        scpi('INIT:DLOG:TRACE "' + filename + '"')
 
-    finally:
-        scpi('OUTP 0')
-        scpi('ABOR:DLOG')
+    def display_charge_pane(self):
+        scpi('DISP:DIAL:DATA "disp_state", INT, 2')
+        scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
+        scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
+        scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
+        scpi('DISP:DIAL:DATA "Vmeas", FLOAT, VOLT, 0')
+        scpi('DISP:DIAL:DATA "Imeas", FLOAT, AMPER, 0')
+        scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, 0')
+        scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, 0')
+
+    def display_done_pane(self):
+        scpi('DISP:DIAL:DATA "disp_state", INT, 3')
+        scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
+        scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
+        scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, ' + str(self.total_amp_hour))
+        scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
+        scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, ' + str(self.total_seconds))
+
+
+class calculator():
+
+    def __init__(self):
+        self.battery_capacity = 1
+        self.preset_lead_acid()
+
+    def preset_lead_acid(self):
+        self.calc_chemistry = 0 # lead acid in display
+        self.cell_count = 6
+        self.cell_charge_voltage = 2.3
+        self.c_rate_charge = 0.3
+        self.c_rate_term = 0.05
+
+    def preset_li_ion(self):
+        self.calc_chemistry = 1 # li-ion in  display
+        self.cell_count = 1
+        self.cell_charge_voltage = 4.2
+        self.c_rate_charge = 0.5
+        self.c_rate_term = 0.05
+
+    def write_display(self):
+        scpi('DISP:DIAL:DATA "disp_state", INT, 1')
+        scpi('DISP:DIALog:DATA "cell_count",INT,' + str(self.cell_count))
+        scpi('DISP:DIALog:DATA "cell_charge_voltage",FLOAT,VOLT,' + str(self.cell_charge_voltage))
+        scpi('DISP:DIALog:DATA "battery_capacity",FLOAT,AMPER,' + str(self.battery_capacity))
+        scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
+        scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
+        scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
+        scpi('DISP:DIALog:DATA "c_rate_charge",FLOAT,UNKN,' + str(self.c_rate_charge))
+        scpi('DISP:DIALog:DATA "c_rate_term",FLOAT,UNKN,' + str(self.c_rate_term))
+        scpi('DISP:DIALog:DATA "calc_chemistry",INT,' + str(self.calc_chemistry))
+
+    def calculate(self):
+        global charge_voltage, charge_current, termination_current
+        charge_voltage = self.cell_count * self.cell_charge_voltage
+        charge_current = self.battery_capacity * self.c_rate_charge
+        termination_current = self.battery_capacity * self.c_rate_term
+
+    def loop(self):
+        while True:
+            self.calculate()
+            self.write_display()
+
+            action = scpi('DISP:DIALog:ACTIon?')
+            if action == 'input_cell_count':
+                self.cell_count = input_int(0, 40, self.cell_count)
+                self.calculate()
+            elif action == 'input_cell_voltage':
+                self.cell_charge_voltage = input_float('VOLT', 0, 10, self.cell_charge_voltage)
+                self.calculate()
+            elif action == 'input_battery_capacity':
+                self.battery_capacity = input_float('AMPER', 0, 50, self.battery_capacity)
+                self.calculate()
+            elif action == 'input_c_rate_charge':
+                self.c_rate_charge = input_float('UNKN', 0, 50, self.c_rate_charge)
+                self.calculate()
+            elif action == 'input_c_rate_term':
+                self.c_rate_term = input_float('UNKN', 0, 50, self.c_rate_term)
+                self.calculate()
+            elif action == 'select_next_chemistry':
+                self.calc_chemistry += 1
+                if self.calc_chemistry > 1:
+                    self.calc_chemistry = 0
+
+                if self.calc_chemistry == 0: # lead acid
+                    self.preset_lead_acid()
+                elif self.calc_chemistry == 1: # li-ion
+                    self.preset_li_ion()
+
+                self.calculate()
+            elif action == 'view_setup':
+                break
+            elif action == 'close' or action == 0:
+                # TODO this wont actually exit...
+                break
 
 def display_setup_pane():
     scpi('DISP:DIAL:DATA "disp_state", INT, 0')
@@ -147,100 +242,14 @@ def display_setup_pane():
     scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
     scpi('DISP:DIAL:DATA "datalog_filename",STR,' + str(datalog_filename))
 
-def display_calculator_pane():
-    scpi('DISP:DIAL:DATA "disp_state", INT, 1')
-    scpi('DISP:DIALog:DATA "cell_count",INT,' + str(cell_count))
-    scpi('DISP:DIALog:DATA "cell_charge_voltage",FLOAT,VOLT,' + str(cell_charge_voltage))
-    scpi('DISP:DIALog:DATA "battery_capacity",FLOAT,AMPER,' + str(battery_capacity))
-    scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
-    scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
-    scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
-    scpi('DISP:DIALog:DATA "c_rate_charge",FLOAT,UNKN,' + str(c_rate_charge))
-    scpi('DISP:DIALog:DATA "c_rate_term",FLOAT,UNKN,' + str(c_rate_term))
-    scpi('DISP:DIALog:DATA "calc_chemistry",INT,' + str(calc_chemistry))
-
-def calculator_loop():
-    global cell_count
-    global cell_charge_voltage
-    global charge_voltage
-    global battery_capacity
-    global termination_current 
-    global c_rate_charge
-    global c_rate_term
-    global charge_current
-    global calc_chemistry
-
-    while True:
-        display_calculator_pane()
-
-        action = scpi('DISP:DIALog:ACTIon?')
-        if action == 'input_cell_count':
-            cell_count = input_int(0, 10, cell_count)
-            charge_voltage = cell_count * cell_charge_voltage
-        elif action == 'input_cell_voltage':
-            cell_charge_voltage = input_float('VOLT', 0, 10, cell_charge_voltage)
-            charge_voltage = cell_count * cell_charge_voltage
-        elif action == 'input_battery_capacity':
-            battery_capacity = input_float('AMPER', 0, 50, battery_capacity)
-            charge_current = battery_capacity * c_rate_charge
-            termination_current = battery_capacity * c_rate_term
-        elif action == 'input_c_rate_charge':
-            c_rate_charge = input_float('UNKN', 0, 50, c_rate_charge)
-            charge_current = battery_capacity * c_rate_charge
-        elif action == 'input_c_rate_term':
-            c_rate_term = input_float('UNKN', 0, 50, c_rate_term)
-            termination_current = battery_capacity * c_rate_term
-        elif action == 'select_next_chemistry':
-            calc_chemistry += 1
-            if calc_chemistry > 1:
-                calc_chemistry = 0
-
-            if calc_chemistry == 0: # lead acid
-                cell_charge_voltage = 2.3
-                cell_count = 6
-                c_rate_charge = 0.3
-                c_rate_term = 0.05
-            elif calc_chemistry == 1: # li-ion
-                cell_charge_voltage = 4.2
-                cell_count = 1
-                c_rate_charge = 0.5
-                c_rate_term = 0.05
-
-            charge_voltage = cell_count * cell_charge_voltage
-            charge_current = battery_capacity * c_rate_charge
-            termination_current = battery_capacity * c_rate_term
-        elif action == 'view_setup':
-            break
-        elif action == 'close' or action == 0:
-            # TODO this wont actually exit...
-            break
-
-def display_done_pane():
-    scpi('DISP:DIAL:DATA "disp_state", INT, 3')
-    scpi('DISP:DIALog:DATA "charge_voltage",FLOAT,VOLT,' + str(charge_voltage))
-    scpi('DISP:DIALog:DATA "charge_current",FLOAT,AMPER,' + str(charge_current))
-    scpi('DISP:DIAL:DATA "elapsed_amp_hour", FLOAT, AMPER, ' + str(total_amp_hour))
-    scpi('DISP:DIALog:DATA "termination_current",FLOAT,AMPER,' + str(termination_current))
-    scpi('DISP:DIAL:DATA "total_seconds", FLOAT, SECOnd, ' + str(total_seconds))
-
-def done_loop():
-    while True:
-        display_done_pane()
-
-        action = scpi('DISP:DIALog:ACTIon?')
-        if action == 'start':
-            break
-        elif action == 'view_datalog':
-            scpi('DISP:WINDOW:DLOG')
-        elif action == 'close' or action == 0:
-            # TODO this wont actually exit...
-            break
-
 def main():
     global charge_voltage
     global charge_current
     global termination_current
     global datalog_filename
+
+    calc = calculator()
+    charge = charger()
 
     scpi('DISP:DIAL:OPEN "/Scripts/CC-CV Battery Charge.res"')
 
@@ -257,10 +266,9 @@ def main():
             elif action == 'input_filename':
                 datalog_filename = input_text(2, 30, datalog_filename)
             elif action == 'view_calculator':
-                calculator_loop()
+                calc.loop()
             elif action == 'start':
-                charge()
-                done_loop()
+                charge.loop()
             elif action == 'close' or action == 0:
                 break
         
