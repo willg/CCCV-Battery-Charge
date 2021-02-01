@@ -33,8 +33,10 @@ def input_text(minimum, maximum, default):
         return default
 
 class charger():
-    total_seconds
-    total_amp_hour
+
+    def __init(self):
+        self.total_seconds = 0
+        self.total_amp_hour = 0
 
     def set_charge_param(self):
         scpi('INST ch1')
@@ -158,12 +160,6 @@ class charger():
 
 
 class calculator():
-    cell_count
-    cell_charge_voltage
-    battery_capacity
-    c_rate_charge
-    c_rate_term
-    calc_chemistry
 
     def __init__(self):
         self.battery_capacity = 1
